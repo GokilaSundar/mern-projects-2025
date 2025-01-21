@@ -1,7 +1,9 @@
 import cors from "cors";
 import dotenv from "dotenv";
+import { existsSync } from "fs";
 import express from "express";
 import mongoose from "mongoose";
+import { join } from "path";
 
 dotenv.config();
 
@@ -12,11 +14,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (_, res) => {
-  res.send("API is running...");
-});
-
 async function main() {
+  // #region For production deployment with frontend
+  const publicPath = join(process.cwd(), "public");
+
+  if (existsSync(publicPath)) {
+    app.use(express.static(publicPath));
+
+    app.get("*", (_, res) => {
+      res.sendFile(join(publicPath, "index.html"));
+    });
+  } else {
+    app.get("/", (_, res) => {
+      res.send("API is running...");
+    });
+  }
+  // #endregion
+
   try {
     console.log("Connecting to MongoDB...");
     await mongoose.connect(process.env.MONGO_URI);
