@@ -1,0 +1,48 @@
+fieldset.list-books {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+div.loading {
+  position: absolute;
+  inset: 0;
+  background: #00000080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+div.search {
+  display: flex;
+  gap: 1em;
+}
+
+div.search input {
+  flex: 1;
+}
+
+div.table-container {
+  flex: 1;
+  overflow: auto;
+}
+
+div.table-container table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+div.table-container table th {
+  text-align: left;
+  border-bottom: 1px solid black;
+}
+
+div.table-container table td > input {
+  border: none;
+  width: 90%;
+}
