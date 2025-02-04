@@ -5,6 +5,8 @@ import express from "express";
 import mongoose from "mongoose";
 import { join } from "path";
 
+import { Message } from "./models/Message.js";
+
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -13,6 +15,79 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.post("/api/messages", async (req, res) => {
+  const { name, message } = req.body;
+
+  if (!name || !message) {
+    res.status(400).send("Name and message are required");
+    return;
+  }
+
+  const now = new Date();
+
+  const newMessage = new Message({
+    name,
+    message,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await newMessage.save();
+
+  res.status(201).send(newMessage);
+});
+
+app.put("/api/messages/:id", async (req, res) => {
+  const { name, message } = req.body;
+
+  if (!name || !message) {
+    res.status(400).send("Name and message are required");
+    return;
+  }
+
+  const messageToUpdate = await Message.findOne({ _id: req.params.id, name });
+
+  if (!messageToUpdate) {
+    res.status(404).send("Message not found");
+    return;
+  }
+
+  messageToUpdate.message = message;
+  messageToUpdate.updatedAt = Date.now();
+
+  await messageToUpdate.save();
+
+  res.send(messageToUpdate);
+});
+
+app.delete("/api/messages/:id", async (req, res) => {
+  const { name } = req.body;
+
+  if (!name) {
+    res.status(400).send("Name is required");
+    return;
+  }
+
+  const messageToDelete = await Message.findOne({ _id: req.params.id, name });
+
+  if (!messageToDelete) {
+    res.status(404).send("Message not found");
+    return;
+  }
+
+  await messageToDelete.deleteOne();
+
+  res.send({
+    message: "Message deleted",
+  });
+});
+
+app.get("/api/messages", async (_, res) => {
+  const messages = await Message.find();
+
+  res.send(messages);
+});
 
 async function main() {
   // #region For production deployment with frontend
