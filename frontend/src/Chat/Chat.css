@@ -1,0 +1,101 @@
+div.chat-container {
+  flex: 1 1 1px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+
+  overflow: hidden;
+  position: relative;
+  border: 0.1em solid #ccc;
+}
+
+div.chat-container > div.loading-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5em;
+
+  position: absolute;
+  background-color: #2ea15520;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+div.chat-container > div.error-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5em;
+
+  position: absolute;
+  background-color: #bd363620;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+div.chat-container > div.messages {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  padding: 0.5em;
+  overflow: auto;
+}
+
+div.chat-container > div.messages > div.message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 0.5em;
+  border: 0.1em solid #ccc;
+  max-width: 60%;
+  min-width: 20em;
+}
+
+div.chat-container > div.messages > div.message > div.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+div.chat-container > div.messages > div.message > div.meta > div.actions {
+  display: flex;
+  gap: 0.5em;
+}
+
+div.chat-container > div.messages > div.message.sent {
+  background-color: #2ea15540;
+  align-self: flex-end;
+}
+
+div.chat-container > div.messages > div.message.received {
+  background-color: #19abff40;
+  align-self: flex-start;
+}
+
+div.chat-container > div.messages > div.message > div.time {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  justify-content: space-between;
+
+  font-size: 0.8em;
+  color: #666;
+}
+
+div.chat-container > form.new-message {
+  display: flex;
+  gap: 0.5em;
+  padding: 0.5em;
+  border-top: 0.1em solid #ccc;
+}
+
+div.chat-container > form.new-message > input {
+  flex: 1;
+}
