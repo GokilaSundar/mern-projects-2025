@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema({
-  name: {
-    type: String,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
   message: {

@@ -1,33 +1,158 @@
+import bcrypt from "bcryptjs";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
-import { existsSync } from "fs";
 import express from "express";
+import { existsSync } from "fs";
+import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { join } from "path";
 
 import { Message } from "./models/Message.js";
+import { User } from "./models/User.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || "SecretPassword@123";
 
 const app = express();
 
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 
-app.post("/api/messages", async (req, res) => {
-  const { name, message } = req.body;
+app.post("/api/register", async (req, res) => {
+  const { name, email, password } = req.body;
 
-  if (!name || !message) {
-    res.status(400).send("Name and message are required");
+  if (!name || !email || !password) {
+    res.status(400).send({
+      message: "Name, email, and password are required",
+    });
+    return;
+  }
+
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    res.status(400).send({
+      message: "User already exists",
+    });
+    return;
+  }
+
+  const encryptedPassword = bcrypt.hashSync(password, 10);
+
+  const newUser = new User({
+    name,
+    email,
+    password: encryptedPassword,
+  });
+
+  await newUser.save();
+
+  const token = jwt.sign({ userId: newUser._id }, JWT_SECRET);
+
+  res.cookie("token", token).send({
+    _id: newUser._id,
+    name: newUser.name,
+    email: newUser,
+  });
+});
+
+app.post("/api/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    res.status(400).send({
+      message: "Email and password are required",
+    });
+    return;
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user || !bcrypt.compareSync(password, user.password)) {
+    res.status(401).send({
+      message: "Invalid email or password",
+    });
+    return;
+  }
+
+  const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+
+  res.cookie("token", token).send({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+  });
+});
+
+app.use("/api", (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    res.status(401).send({
+      message: "Unauthorized!",
+    });
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    req.userId = decoded.userId;
+
+    next();
+  } catch (err) {
+    console.error("Failed to authenticate token", err);
+
+    res.status(401).send({
+      message: "Invalid token!",
+    });
+  }
+});
+
+app.get("/api/me", async (req, res) => {
+  const userId = req.userId;
+
+  const user = await User.findOne({
+    _id: userId,
+  });
+
+  if (!user) {
+    res.status(404).send({
+      message: "User not found",
+    });
+    return;
+  }
+
+  res.send({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+  });
+});
+
+app.post("/api/logout", (_, res) => {
+  res.clearCookie("token").send({
+    message: "Logged out",
+  });
+});
+
+app.post("/api/messages", async (req, res) => {
+  const { message } = req.body;
+  const userId = req.userId;
+
+  if (!message) {
+    res.status(400).send("Message is required");
     return;
   }
 
   const now = new Date();
 
   const newMessage = new Message({
-    name,
+    userId,
     message,
     createdAt: now,
     updatedAt: now,
@@ -39,14 +164,15 @@ app.post("/api/messages", async (req, res) => {
 });
 
 app.put("/api/messages/:id", async (req, res) => {
-  const { name, message } = req.body;
+  const { message } = req.body;
+  const userId = req.userId;
 
-  if (!name || !message) {
+  if (!message) {
     res.status(400).send("Name and message are required");
     return;
   }
 
-  const messageToUpdate = await Message.findOne({ _id: req.params.id, name });
+  const messageToUpdate = await Message.findOne({ _id: req.params.id, userId });
 
   if (!messageToUpdate) {
     res.status(404).send("Message not found");
@@ -62,14 +188,9 @@ app.put("/api/messages/:id", async (req, res) => {
 });
 
 app.delete("/api/messages/:id", async (req, res) => {
-  const { name } = req.body;
+  const userId = req.userId;
 
-  if (!name) {
-    res.status(400).send("Name is required");
-    return;
-  }
-
-  const messageToDelete = await Message.findOne({ _id: req.params.id, name });
+  const messageToDelete = await Message.findOne({ _id: req.params.id, userId });
 
   if (!messageToDelete) {
     res.status(404).send("Message not found");
@@ -84,7 +205,29 @@ app.delete("/api/messages/:id", async (req, res) => {
 });
 
 app.get("/api/messages", async (_, res) => {
-  const messages = await Message.find();
+  const messages = await Message.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $unwind: "$user",
+    },
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        message: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        name: "$user.name",
+      },
+    },
+  ]);
 
   res.send(messages);
 });

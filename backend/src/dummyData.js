@@ -1,11 +1,13 @@
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 
 import { Message } from "./models/Message.js";
+import { User } from "./models/User.js";
 
 dotenv.config();
 
-const messages = [
+const rawMessages = [
   {
     name: "Neha Patel",
     message: "Hey guys, did you finish the Data Structures assignment?",
@@ -91,39 +93,87 @@ const messages = [
   },
 ];
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Connected to MongoDB");
+const users = rawMessages
+  .reduce((acc, { name }) => {
+    if (!acc.includes(name)) {
+      acc.push(name);
+    }
+    return acc;
+  }, [])
+  .map((name) => ({
+    name,
+    email: `${name.replace(/\s/g, ".").toLowerCase()}@gmail.com`,
+    password: bcrypt.hashSync("Password@123", 10),
+  }));
 
-    // Start Time = Current Times - (Number of Messages * 5000ms)
-    const startTime = Date.now() - messages.length * 5000;
-
-    Message.deleteMany({})
-      .then(() => {
-        console.log("Deleted existing messages");
-
-        Message.insertMany(
-          messages.map((message, index, arr) => ({
-            ...message,
-            createdAt: new Date(startTime + index * 5000),
-            updatedAt:
-              index === arr.length - 1
-                ? new Date(startTime + index * 60000)
-                : new Date(startTime + index * 5000),
-          }))
-        )
-          .then(() => {
-            console.log("Inserted messages");
-          })
-          .catch((error) => {
-            console.error("Failed to insert messages", error);
-          });
-      })
-      .catch((error) => {
-        console.error("Failed to delete existing messages", error);
-      });
-  })
-  .catch((error) => {
+async function main() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+  } catch (error) {
     console.error("Failed to connect to MongoDB", error);
-  });
+    process.exit(1);
+  }
+
+  console.log("Connected to MongoDB");
+
+  const startTime = Date.now() - rawMessages.length * 5000;
+
+  try {
+    await Message.deleteMany({});
+
+    console.log("Deleted existing messages");
+  } catch (error) {
+    console.error("Failed to delete existing messages", error);
+    process.exit(1);
+  }
+
+  try {
+    await User.deleteMany({});
+
+    console.log("Deleted existing users");
+  } catch (error) {
+    console.error("Failed to delete existing users", error);
+    process.exit(1);
+  }
+
+  try {
+    const userNameIdMap = (await User.insertMany(users)).reduce(
+      (obj, user) => {
+        obj[user.name] = user._id;
+        return obj;
+      },
+      {}
+    );
+
+    console.log("Created users!");
+
+    try {
+      const messages = rawMessages.map((message, index, arr) => ({
+        userId: userNameIdMap[message.name],
+        message: message.message,
+        createdAt: new Date(startTime + index * 5000),
+        updatedAt:
+          index === arr.length - 1
+            ? new Date(startTime + index * 60000)
+            : new Date(startTime + index * 5000),
+      }));
+
+      await Message.insertMany(messages);
+
+      console.log("Created messages!");
+
+      process.exit(0);
+    } catch (error) {
+      console.error("Failed to create messages", error);
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error("Failed to create users", error);
+    process.exit(1);
+  }
+}
+
+main().catch((error) => {
+  console.error("Failed to create dummy data", error);
+  process.exit(1);
+});
