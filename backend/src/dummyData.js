@@ -1,0 +1,129 @@
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+
+import { Message } from "./models/Message.js";
+
+dotenv.config();
+
+const messages = [
+  {
+    name: "Neha Patel",
+    message: "Hey guys, did you finish the Data Structures assignment?",
+  },
+  {
+    name: "Aarav Sharma",
+    message: "Not yet! The recursion part is really tricky.",
+  },
+  {
+    name: "Priya Verma",
+    message:
+      "I found a great YouTube video explaining recursion. Want the link?",
+  },
+  {
+    name: "Vikram Singh",
+    message: "Yes, please! I\u2019m struggling with it too.",
+  },
+  {
+    name: "Neha Patel",
+    message: "Are we meeting tomorrow to discuss the final year project?",
+  },
+  {
+    name: "Vikram Singh",
+    message: "Yeah, let's meet in the library at 4 PM.",
+  },
+  {
+    name: "Neha Patel",
+    message: "I tried implementing a binary search tree in Python. Works well!",
+  },
+  {
+    name: "Priya Verma",
+    message: "Nice! Can you share the code? I want to compare it with mine.",
+  },
+  {
+    name: "Vikram Singh",
+    message: "Does anyone have the notes for last week's Algorithms lecture?",
+  },
+  {
+    name: "Priya Verma",
+    message: "Check the Google Drive folder. I uploaded my notes there.",
+  },
+  {
+    name: "Aarav Sharma",
+    message:
+      "Guys, I just completed the frontend for our project. Check it out!",
+  },
+  {
+    name: "Rohan Iyer",
+    message: "Looks amazing! Now we just need to connect the backend.",
+  },
+  {
+    name: "Priya Verma",
+    message: "Should we use Firebase for authentication or build our own?",
+  },
+  {
+    name: "Rohan Iyer",
+    message: "Firebase is easier, but custom auth will be more flexible.",
+  },
+  {
+    name: "Priya Verma",
+    message: "I\u2019m thinking of writing a blog post on AI ethics. Thoughts?",
+  },
+  {
+    name: "Aarav Sharma",
+    message: "That's a great idea! AI bias is a trending topic right now.",
+  },
+  {
+    name: "Neha Patel",
+    message:
+      "By the way, our networking professor said there's a surprise quiz tomorrow!",
+  },
+  {
+    name: "Vikram Singh",
+    message: "Oh no! I need to revise TCP/IP protocols now.",
+  },
+  {
+    name: "Rohan Iyer",
+    message: "I just deployed my first web app on AWS! Feels so cool.",
+  },
+  {
+    name: "Priya Verma",
+    message: "Awesome! Now you can help me deploy mine too!",
+  },
+];
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("Connected to MongoDB");
+
+    // Start Time = Current Times - (Number of Messages * 5000ms)
+    const startTime = Date.now() - messages.length * 5000;
+
+    Message.deleteMany({})
+      .then(() => {
+        console.log("Deleted existing messages");
+
+        Message.insertMany(
+          messages.map((message, index, arr) => ({
+            ...message,
+            createdAt: new Date(startTime + index * 5000),
+            updatedAt:
+              index === arr.length - 1
+                ? new Date(startTime + index * 60000)
+                : new Date(startTime + index * 5000),
+          }))
+        )
+          .then(() => {
+            console.log("Inserted messages");
+          })
+          .catch((error) => {
+            console.error("Failed to insert messages", error);
+          });
+      })
+      .catch((error) => {
+        console.error("Failed to delete existing messages", error);
+      });
+  })
+  .catch((error) => {
+    console.error("Failed to connect to MongoDB", error);
+  });
