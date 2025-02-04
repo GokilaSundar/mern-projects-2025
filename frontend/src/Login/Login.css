@@ -1,0 +1,15 @@
+fieldset.login {
+  width: 25em;
+}
+
+fieldset.login > form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+fieldset.login > form > div.form-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5em;
+}

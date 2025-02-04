@@ -10,3 +10,21 @@ div#root {
   position: fixed;
   inset: 0;
 }
+
+div.auth-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+}
+
+div.auth-content {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  gap: 1em;
+}

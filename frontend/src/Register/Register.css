@@ -1,0 +1,15 @@
+fieldset.register {
+  width: 25em;
+}
+
+fieldset.register > form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+fieldset.register > form > div.form-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5em;
+}

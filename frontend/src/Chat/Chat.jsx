@@ -13,7 +13,7 @@ import {
 
 const POLLING_INTERVAL = 2000;
 
-export const Chat = ({ name }) => {
+export const Chat = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
@@ -29,90 +29,85 @@ export const Chat = ({ name }) => {
     return messages[messages.length - 1]._id;
   }, [messages]);
 
-  const handleSend = useCallback(
-    async (e) => {
-      e.preventDefault();
+  const handleSend = useCallback(async (e) => {
+    e.preventDefault();
 
-      const message = e.target[0].value;
+    const message = e.target[0].value;
 
-      if (!message) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        await axios.post("/api/messages", {
-          name,
-          message,
-        });
-
-        e.target[0].value = "";
-      } catch (err) {
-        setError(`Failed to send message: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [name]
-  );
-
-  const handleEdit = useCallback(
-    async (e) => {
-      const id = e.target.getAttribute("data-id");
-
-      const message = prompt("Edit message:");
-
-      if (!message) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        await axios.put(`/api/messages/${id}`, {
-          name,
-          message,
-        });
-      } catch (err) {
-        setError(`Failed to edit message: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [name]
-  );
-
-  const handleDelete = useCallback(
-    async (e) => {
-      const id = e.target.getAttribute("data-id");
-
-      if (!confirm("Are you sure you want to delete this message?")) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        await axios.delete(`/api/messages/${id}`, {
-          data: {
-            name,
-          },
-        });
-      } catch (err) {
-        setError(`Failed to delete message: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [name]
-  );
-
-  useEffect(() => {
-    if (!name) {
+    if (!message) {
       return;
     }
 
+    try {
+      setLoading(true);
+
+      await axios.post("/api/messages", {
+        message,
+      });
+
+      e.target[0].value = "";
+    } catch (err) {
+      setError(`Failed to send message: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      await axios.post("/api/logout");
+
+      window.location.reload();
+    } catch (err) {
+      setError(`Failed to logout: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleEdit = useCallback(async (e) => {
+    const id = e.target.getAttribute("data-id");
+
+    const message = prompt("Edit message:");
+
+    if (!message) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await axios.put(`/api/messages/${id}`, {
+        message,
+      });
+    } catch (err) {
+      setError(`Failed to edit message: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleDelete = useCallback(async (e) => {
+    const id = e.target.getAttribute("data-id");
+
+    if (!confirm("Are you sure you want to delete this message?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await axios.delete(`/api/messages/${id}`);
+    } catch (err) {
+      setError(`Failed to delete message: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     const poll = async () => {
       try {
         setLoading(true);
@@ -143,7 +138,7 @@ export const Chat = ({ name }) => {
       clearInterval(intervalRef.current);
       abortControllerRef.current.abort();
     };
-  }, [name]);
+  }, []);
 
   useLayoutEffect(() => {
     if (!latestMessageId) {
@@ -161,6 +156,15 @@ export const Chat = ({ name }) => {
 
   return (
     <div className="chat-container">
+      <div className="header">
+        <div className="user">
+          Logged in as <strong className="name">{user.name}</strong>{" "}
+          <i>({user.email})</i>
+        </div>
+
+        <button onClick={handleLogout}>Logout</button>
+      </div>
+
       {loading && <div className="loading-overlay">Loading...</div>}
       {error && <div className="error-overlay">{error}</div>}
 
@@ -169,11 +173,13 @@ export const Chat = ({ name }) => {
           <div
             key={message._id}
             id={message._id}
-            className={`message ${message.name === name ? "sent" : "received"}`}
+            className={`message ${
+              message.userId === user._id ? "sent" : "received"
+            }`}
           >
             <div className="meta">
               <strong className="name">{message.name}</strong>
-              {message.name === name && (
+              {message.userId === user._id && (
                 <div className="actions">
                   <button
                     data-id={message._id}
@@ -216,5 +222,5 @@ export const Chat = ({ name }) => {
 };
 
 Chat.propTypes = {
-  name: PropTypes.string,
+  user: PropTypes.object.isRequired,
 };

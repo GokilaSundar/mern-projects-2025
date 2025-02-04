@@ -1,22 +1,42 @@
 import "./App.css";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Chat } from "./Chat/Chat";
+import axios from "axios";
+import { Login } from "./Login/Login";
+import { Register } from "./Register/Register";
 
 export const App = () => {
-  const [name, setName] = useState(() => localStorage.getItem("name") || "");
+  const [authenticating, setAuthenticating] = useState(true);
+  const [user, setUser] = useState(null);
 
-  if (!name) {
-    const name = prompt("Enter your name");
+  useEffect(() => {
+    axios
+      .get("/api/me")
+      .then((response) => {
+        setUser(response.data);
+        setAuthenticating(false);
+      })
+      .catch((error) => {
+        console.error("Failed to authenticate", error);
 
-    if (name) {
-      localStorage.setItem("name", name);
-      setName(name);
-    }
+        setAuthenticating(false);
+      });
+  }, []);
 
-    return <div className="enter-name">Enter your name to continue</div>;
+  if (authenticating) {
+    return <div className="auth-overlay">Authenticating...</div>;
   }
 
-  return <Chat name={name} />;
+  if (!user) {
+    return (
+      <div className="auth-content">
+        <Login setUser={setUser} />
+        <Register setUser={setUser} />
+      </div>
+    );
+  }
+
+  return <Chat user={user} />;
 };
