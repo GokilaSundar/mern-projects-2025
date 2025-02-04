@@ -1,0 +1,63 @@
+div.tasks-container {
+  display: grid;
+  gap: 1em;
+  flex: 1 1 1px;
+  overflow: auto;
+  grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+}
+
+div.tasks-container > div.tasks {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+
+  overflow: hidden;
+  border: 0.1em solid #ccc;
+  padding: 1em;
+
+  min-height: 30em;
+}
+
+div.tasks-container > div.tasks > div.scroll-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  flex: 1;
+  overflow: auto;
+  overflow: overlay;
+}
+
+div.task {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 0.5em;
+  border: 0.1em solid #ccc;
+}
+
+div.task > div.description {
+  display: flex;
+  gap: 0.5em;
+}
+
+div.task > div.description > input {
+  flex: 1;
+}
+
+div.task > div.labels-actions {
+  display: flex;
+  gap: 0.5em;
+  justify-content: space-between;
+}
+
+div.task > div.labels-actions > div.labels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+div.task > div.labels-actions > div.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}

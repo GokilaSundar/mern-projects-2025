@@ -1,0 +1,10 @@
+form.new-task {
+  display: flex;
+  gap: 0.5em;
+  padding: 0.5em;
+  border: 0.1em solid #ccc;
+}
+
+form.new-task > input {
+  flex: 1;
+}
