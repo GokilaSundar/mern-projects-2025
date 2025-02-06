@@ -14,6 +14,7 @@ import { io } from "socket.io-client";
 
 export const Chat = ({ user }) => {
   const [loading, setLoading] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
 
@@ -129,6 +130,10 @@ export const Chat = ({ user }) => {
 
     const socket = io();
 
+    socket.on("onlineUsers", (users) => {
+      setOnlineUsers(users);
+    });
+
     socket.on("newMessage", (message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
@@ -171,6 +176,10 @@ export const Chat = ({ user }) => {
         <div className="user">
           Logged in as <strong className="name">{user.name}</strong>{" "}
           <i>({user.email})</i>
+        </div>
+
+        <div className="online-users">
+          Online users: <strong className="count">{onlineUsers.length}</strong>
         </div>
 
         <button onClick={handleLogout}>Logout</button>
