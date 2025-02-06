@@ -4,9 +4,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { existsSync } from "fs";
+import { createServer } from "http";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { join } from "path";
+import { Server } from "socket.io";
 
 import { Message } from "./models/Message.js";
 import { User } from "./models/User.js";
@@ -17,6 +19,8 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "SecretPassword@123";
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server);
 
 app.use(cookieParser());
 app.use(cors());
@@ -160,6 +164,16 @@ app.post("/api/messages", async (req, res) => {
 
   await newMessage.save();
 
+  // Load user to get name and add it to the message as "name"
+  const user = await User.findOne({
+    _id: userId,
+  });
+
+  io.emit("newMessage", {
+    ...newMessage.toObject(),
+    name: user.name,
+  });
+
   res.status(201).send(newMessage);
 });
 
@@ -184,6 +198,17 @@ app.put("/api/messages/:id", async (req, res) => {
 
   await messageToUpdate.save();
 
+  const user = await User.findOne({
+    _id: userId,
+  });
+
+  messageToUpdate.name = user.name;
+
+  io.emit("editMessage", {
+    ...messageToUpdate.toObject(),
+    name: user.name,
+  });
+
   res.send(messageToUpdate);
 });
 
@@ -198,6 +223,8 @@ app.delete("/api/messages/:id", async (req, res) => {
   }
 
   await messageToDelete.deleteOne();
+
+  io.emit("deleteMessage", req.params.id);
 
   res.send({
     message: "Message deleted",
@@ -232,6 +259,14 @@ app.get("/api/messages", async (_, res) => {
   res.send(messages);
 });
 
+io.on("connection", (socket) => {
+  console.log("User connected", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected", socket.id);
+  });
+});
+
 async function main() {
   // #region For production deployment with frontend
   const publicPath = join(process.cwd(), "public");
@@ -258,7 +293,7 @@ async function main() {
     process.exit(1);
   }
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
   });
 }
