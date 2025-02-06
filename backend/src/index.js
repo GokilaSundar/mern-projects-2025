@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import cookie from "cookie";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -17,6 +18,8 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "SecretPassword@123";
+
+const socketConnections = {};
 
 const app = express();
 const server = createServer(app);
@@ -260,11 +263,46 @@ app.get("/api/messages", async (_, res) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected", socket.id);
+  try {
+    const token = cookie.parse(socket.handshake.headers.cookie).token;
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected", socket.id);
-  });
+    if (!token) {
+      socket.disconnect();
+      return;
+    }
+
+    const userId = jwt.verify(token, JWT_SECRET).userId;
+
+    socketConnections[socket.id] = userId;
+
+    io.emit(
+      "onlineUsers",
+      Object.values(socketConnections).filter(
+        (value, index, array) => array.indexOf(value) === index
+      )
+    );
+
+    console.log("User connected", userId);
+
+    socket.on("disconnect", () => {
+      delete socketConnections[socket.id];
+
+      io.emit(
+        "onlineUsers",
+        Object.values(socketConnections).filter(
+          (value, index, array) => array.indexOf(value) === index
+        )
+      );
+
+      console.log("User disconnected", userId);
+    });
+  } catch (err) {
+    console.error("Failed to authenticate token", err);
+
+    if (socket.connected) {
+      socket.disconnect();
+    }
+  }
 });
 
 async function main() {
