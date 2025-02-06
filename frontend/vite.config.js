@@ -11,6 +11,8 @@ export default defineConfig({
     proxy: {
       // eslint-disable-next-line no-undef
       "/api": process.env.API_BASE_URL,
+      // eslint-disable-next-line no-undef
+      "/socket.io": process.env.API_BASE_URL,
     },
   },
 });

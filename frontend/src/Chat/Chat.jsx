@@ -10,8 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-
-const POLLING_INTERVAL = 2000;
+import { io } from "socket.io-client";
 
 export const Chat = ({ user }) => {
   const [loading, setLoading] = useState(false);
@@ -19,7 +18,6 @@ export const Chat = ({ user }) => {
   const [error, setError] = useState(null);
 
   const abortControllerRef = useRef();
-  const intervalRef = useRef();
 
   const latestMessageId = useMemo(() => {
     if (messages.length === 0) {
@@ -108,35 +106,48 @@ export const Chat = ({ user }) => {
   }, []);
 
   useEffect(() => {
-    const poll = async () => {
-      try {
-        setLoading(true);
+    setLoading(true);
 
-        abortControllerRef.current = new AbortController();
+    abortControllerRef.current = new AbortController();
 
-        const response = await axios.get("/api/messages", {
-          signal: abortControllerRef.current.signal,
-        });
-
+    axios
+      .get("/api/messages", {
+        signal: abortControllerRef.current.signal,
+      })
+      .then((response) => {
         setError(null);
         setMessages(response.data);
 
         setLoading(false);
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!axios.isCancel(err)) {
           setError(`Failed to load messages: ${err.message}`);
           setLoading(false);
         }
-      }
-    };
+      });
 
-    poll();
+    const socket = io();
 
-    intervalRef.current = setInterval(poll, POLLING_INTERVAL);
+    socket.on("newMessage", (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+
+    socket.on("editMessage", (message) => {
+      setMessages((prevMessages) =>
+        prevMessages.map((m) => (m._id === message._id ? message : m))
+      );
+    });
+
+    socket.on("deleteMessage", (messageId) => {
+      setMessages((prevMessages) =>
+        prevMessages.filter((m) => m._id !== messageId)
+      );
+    });
 
     return () => {
-      clearInterval(intervalRef.current);
       abortControllerRef.current.abort();
+      socket.disconnect();
     };
   }, []);
 
