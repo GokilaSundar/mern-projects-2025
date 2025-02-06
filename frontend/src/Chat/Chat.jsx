@@ -12,7 +12,7 @@ import {
 } from "react";
 import { io } from "socket.io-client";
 
-export const Chat = ({ user }) => {
+export const Chat = ({ user, setUser }) => {
   const [loading, setLoading] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -58,13 +58,13 @@ export const Chat = ({ user }) => {
 
       await axios.post("/api/logout");
 
-      window.location.reload();
+      setUser(null);
     } catch (err) {
       setError(`Failed to logout: ${err.message}`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setUser]);
 
   const handleEdit = useCallback(async (e) => {
     const id = e.target.getAttribute("data-id");
@@ -243,4 +243,5 @@ export const Chat = ({ user }) => {
 
 Chat.propTypes = {
   user: PropTypes.object.isRequired,
+  setUser: PropTypes.func.isRequired,
 };

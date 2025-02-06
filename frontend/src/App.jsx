@@ -38,5 +38,5 @@ export const App = () => {
     );
   }
 
-  return <Chat user={user} />;
+  return <Chat user={user} setUser={setUser} />;
 };
