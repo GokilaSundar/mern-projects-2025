@@ -198,7 +198,17 @@ export const Chat = ({ user, setUser }) => {
             }`}
           >
             <div className="meta">
-              <strong className="name">{message.name}</strong>
+              <div className="name">
+                <strong>{message.name}</strong>
+                <span
+                  className={`indicator ${
+                    onlineUsers.includes(message.userId) && "online"
+                  }`}
+                  title={
+                    onlineUsers.includes(message.userId) ? "Online" : "Offline"
+                  }
+                ></span>
+              </div>
               {message.userId === user._id && (
                 <div className="actions">
                   <button

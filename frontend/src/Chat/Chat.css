@@ -73,6 +73,23 @@ div.chat-container > div.messages > div.message > div.meta {
   align-items: center;
 }
 
+div.chat-container > div.messages > div.message > div.meta > div.name {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+div.chat-container > div.messages > div.message > div.meta > div.name > span.indicator {
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background-color: #ff7c7c;
+}
+
+div.chat-container > div.messages > div.message > div.meta > div.name > span.indicator.online {
+  background-color: #6edd93;
+}
+
 div.chat-container > div.messages > div.message > div.meta > div.actions {
   display: flex;
   gap: 0.5em;
